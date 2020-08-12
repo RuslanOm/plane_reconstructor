@@ -1,17 +1,12 @@
 import logging
 
-from torch.optim import SGD, Adam, ASGD, Adamax, Adadelta, Adagrad, RMSprop
+from torch.optim import SGD, Adam
 
 logger = logging.getLogger("ptsemseg")
 
 key2opt = {
     "sgd": SGD,
-    "adam": Adam,
-    "asgd": ASGD,
-    "adamax": Adamax,
-    "adadelta": Adadelta,
-    "adagrad": Adagrad,
-    "rmsprop": RMSprop,
+    "adam": Adam
 }
 
 

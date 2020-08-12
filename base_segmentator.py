@@ -10,8 +10,3 @@ class BaseSegmentator(ABC):
     def segment(self, *args, **kwargs):
         """Method for depth segmentation from monocular image/video"""
         pass
-
-    @abstractmethod
-    def get_parted(self, *args, **kwargs):
-        """Method for selecting only interested parts of image/video"""
-        pass
