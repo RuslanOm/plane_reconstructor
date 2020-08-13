@@ -55,13 +55,12 @@ label_colours = dict(zip(range(19), colors))
 
 
 class HardNetSegm(BaseSegmentator):
-    def __init__(self, path, class_labels, n_classes=19):
+    def __init__(self, path, num_classes=19):
         super().__init__()
         device, model = init_model({"model_path": path})
         self.device = device
         self.model = model
-        self.class_labels = class_labels
-        self.n_classes = n_classes
+        self.n_classes = num_classes
 
     def decode_segmap(self, temp, ls):
         r = temp.copy()
@@ -78,12 +77,12 @@ class HardNetSegm(BaseSegmentator):
         rgb[:, :, 2] = b / 255.0
         return rgb
 
-    def segment(self, img_path="", img=False, size=(640, 480), device=torch.device("cpu")):
-        assert img_path or img, "Path or img must be identified"
+    def segment(self, img_path="", img=[], size=(640, 480)):
+        assert img_path or len(img), "Path or img must be identified"
         if img_path:
             img = cv2.imread(img_path)
-        img_resized = cv2.resize(img, (size[1], size[0]))  # uint8 with RGB mode
-        img = img_resized.astype(np.float16)
+        # img_resized = cv2.resize(img, (size[0], size[1]))  # uint8 with RGB mode
+        img = img.astype(np.float16)
 
         # norm
         value_scale = 255
@@ -98,12 +97,12 @@ class HardNetSegm(BaseSegmentator):
         img = np.expand_dims(img, 0)
         img = torch.from_numpy(img).float()
 
-        images = img.to(device)
+        images = img.to(self.device)
         start = time.time()
         outputs = self.model(images)
         procc_time = time.time() - start
         pred = np.squeeze(outputs.data.max(1)[1].cpu().numpy(), axis=0)
         decoded = self.decode_segmap(pred, range(self.n_classes))
 
-        return img_resized, decoded, pred, procc_time
+        return img, decoded, pred, procc_time
 
