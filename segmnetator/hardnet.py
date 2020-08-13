@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 import collections
 
+
 class ConvLayer(nn.Sequential):
     def __init__(self, in_channels, out_channels, kernel=3, stride=1, dropout=0.1):
         super().__init__()

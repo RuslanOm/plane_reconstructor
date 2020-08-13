@@ -4,9 +4,8 @@ import os
 import numpy as np
 import time
 
-from ptsemseg.models import get_model
-from ptsemseg.loader import get_loader
-from ptsemseg.utils import convert_state_dict
+
+from segmnetator.utils import get_model, convert_state_dict
 
 torch.backends.cudnn.benchmark = True
 import cv2
