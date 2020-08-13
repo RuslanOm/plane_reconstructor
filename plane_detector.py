@@ -10,7 +10,7 @@ class PlaneDetector:
         self.segm_model = segm_model
 
     def get_segm_map(self, path="", img=None):
-        assert path or not None, "Path or img must be identified"
+        assert path or img is not None, "Path or img must be identified"
         if path:
             img = cv2.imread(path)
             preds = self.segm_model.segment("", img, (640, 480))
@@ -19,7 +19,7 @@ class PlaneDetector:
         return preds
 
     def get_depth_map(self, path="", img=None):
-        assert path or not None, "Path or img must be identified"
+        assert path or img is not None, "Path or img must be identified"
         if path:
             img = cv2.imread(path)
         preds = self.depth_model.estimate(img)

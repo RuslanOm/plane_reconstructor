@@ -78,7 +78,7 @@ class HardNetSegm(BaseSegmentator):
         return rgb
 
     def segment(self, img_path="", img=None, size=(640, 480)):
-        assert img_path or not None, "Path or img must be identified"
+        assert img_path or img is not None, "Path or img must be identified"
         if img_path:
             img = cv2.imread(img_path)
         # img_resized = cv2.resize(img, (size[0], size[1]))  # uint8 with RGB mode
