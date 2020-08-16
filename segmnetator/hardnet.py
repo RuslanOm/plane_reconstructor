@@ -321,7 +321,7 @@ class hardnet(nn.Module):
                padding=0, bias=True)
     
     def v2_transform(self, trt=False):        
-        for i in range( len(self.base)):
+        for i in range(len(self.base)):
             if isinstance(self.base[i], HarDBlock):
                 blk = self.base[i]
                 self.base[i] = HarDBlock_v2(blk.in_channels, blk.growth_rate, blk.grmul, blk.n_layers)

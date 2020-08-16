@@ -1,26 +1,38 @@
+import time
 import cv2
-from base_segmentator import BaseSegmentator
-from base_destimator import BaseDepthEstimator
+import numpy as np
+import torch
+from depth_estimator.BTS import BtsController
+
+from utils import load_segm_model, load_depth_model, preprocess_image
 
 
 class PlaneDetector:
-
-    def __init__(self, depth_model: BaseDepthEstimator, segm_model: BaseSegmentator):
-        self.depth_model = depth_model
-        self.segm_model = segm_model
+    def __init__(self, path_depth, path_segm):
+        self.depth_model = load_depth_model(path_depth)
+        self.segm_model = load_segm_model(path_segm)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def get_segm_map(self, path="", img=None):
-        assert path or img is not None, "Path or img must be identified"
-        if path:
-            img = cv2.imread(path)
-            preds = self.segm_model.segment("", img, (640, 480))
-        else:
-            preds = self.segm_model.segment(img=img, size=(640, 480))
-        return preds
+        images, resized_img = preprocess_image(self.device, path, img)
+
+        start = time.time()
+        outputs = self.segm_model(images)
+        procc_time = time.time() - start
+        pred = np.squeeze(outputs.data.max(1)[1].cpu().numpy(), axis=0)
+        return pred, procc_time
 
     def get_depth_map(self, path="", img=None):
-        assert path or img is not None, "Path or img must be identified"
         if path:
             img = cv2.imread(path)
-        preds = self.depth_model.estimate(img)
+        img = cv2.resize(img, (640, 480))
+        preds = self.depth_model.predict(img, is_channels_first=False, normalize=True)
         return preds
+
+    def get_segmented_depth(self, img, interested_classes):
+        seg_map, _ = self.get_segm_map("", img)
+        depth_map = self.get_depth_map("", img)
+        depth_img = BtsController.depth_map_to_rgbimg(depth_map)
+        vect_func = np.vectorize(lambda x: x in set(interested_classes))
+        map_arr = vect_func(seg_map)
+        return depth_img * map_arr

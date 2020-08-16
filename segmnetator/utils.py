@@ -9,8 +9,69 @@ import numpy as np
 from collections import OrderedDict
 
 import copy
+
+import torch
 import torchvision.models as models
 from segmnetator.hardnet import hardnet
+
+
+n_classes = 19
+colors = [#[0, 0, 0],
+          [128, 64, 128],
+          [244, 35, 232],
+          [70, 70, 70],
+          [102, 102, 156],
+          [190, 153, 153],
+          [153, 153, 153],
+          [250, 170, 30],
+          [220, 220, 0],
+          [107, 142, 35],
+          [152, 251, 152],
+          [0, 130, 180],
+          [220, 20, 60],
+          [255, 0, 0],
+          [0, 0, 142],
+          [0, 0, 70],
+          [0, 60, 100],
+          [0, 80, 100],
+          [0, 0, 230],
+          [119, 11, 32],
+          ]
+
+class_names = [
+    # "unlabelled",
+    "road",
+    "sidewalk",
+    "building",
+    "wall",
+    "fence",
+    "pole",
+    "traffic_light",
+    "traffic_sign",
+    "vegetation",
+    "terrain",
+    "sky",
+    "person",
+    "rider",
+    "car",
+    "truck",
+    "bus",
+    "train",
+    "motorcycle",
+    "bicycle",
+]
+label_colours = dict(zip(range(19), colors))
+
+
+def init_model(args):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = get_model({"arch": "hardnet"}, n_classes)
+    state = convert_state_dict(torch.load(args["model_path"], map_location=device)["model_state"])
+    model.load_state_dict(state)
+    model.eval()
+    model.to(device)
+
+    return device, model
 
 
 def get_model(model_dict, n_classes, version=None):

@@ -3,59 +3,12 @@ import argparse
 import os
 import numpy as np
 import time
-
-
-from segmnetator.utils import get_model, convert_state_dict
-
-torch.backends.cudnn.benchmark = True
 import cv2
 
-n_classes = 19
-colors = [#[0, 0, 0],
-          [128, 64, 128],
-          [244, 35, 232],
-          [70, 70, 70],
-          [102, 102, 156],
-          [190, 153, 153],
-          [153, 153, 153],
-          [250, 170, 30],
-          [220, 220, 0],
-          [107, 142, 35],
-          [152, 251, 152],
-          [0, 130, 180],
-          [220, 20, 60],
-          [255, 0, 0],
-          [0, 0, 142],
-          [0, 0, 70],
-          [0, 60, 100],
-          [0, 80, 100],
-          [0, 0, 230],
-          [119, 11, 32],
-          ]
+from segmnetator.utils import get_model, convert_state_dict, label_colours, n_classes, class_names
 
-class_names = [
-    # "unlabelled",
-    "road",
-    "sidewalk",
-    "building",
-    "wall",
-    "fence",
-    "pole",
-    "traffic_light",
-    "traffic_sign",
-    "vegetation",
-    "terrain",
-    "sky",
-    "person",
-    "rider",
-    "car",
-    "truck",
-    "bus",
-    "train",
-    "motorcycle",
-    "bicycle",
-]
-label_colours = dict(zip(range(19), colors))
+torch.backends.cudnn.benchmark = True
+
 
 
 def decode_segmap(temp):
@@ -172,34 +125,34 @@ def process_img(img_path, size, device, model):
     return img_resized, decoded, pred,  procc_time
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Params")
-    parser.add_argument(
-        "--model_path",
-        type=str,
-        required=True,
-        help="Path to the saved model",
-    )
-
-    # parser.add_argument(
-    #     "--loader",
-    #     type=str,
-    #     default="cityscapes",
-    #     help="Loader type",
-    # )
-
-    parser.add_argument(
-        "--size",
-        type=str,
-        default="540,960",
-        help="Inference size",
-    )
-
-    parser.add_argument(
-        "--input", nargs="?", type=str, default=None, help="Path of the input image/ directory"
-    )
-    parser.add_argument(
-        "--output", nargs="?", type=str, default="./", help="Path of the output directory"
-    )
-    args = parser.parse_args()
-    test(args)
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description="Params")
+#     parser.add_argument(
+#         "--model_path",
+#         type=str,
+#         required=True,
+#         help="Path to the saved model",
+#     )
+#
+#     # parser.add_argument(
+#     #     "--loader",
+#     #     type=str,
+#     #     default="cityscapes",
+#     #     help="Loader type",
+#     # )
+#
+#     parser.add_argument(
+#         "--size",
+#         type=str,
+#         default="540,960",
+#         help="Inference size",
+#     )
+#
+#     parser.add_argument(
+#         "--input", nargs="?", type=str, default=None, help="Path of the input image/ directory"
+#     )
+#     parser.add_argument(
+#         "--output", nargs="?", type=str, default="./", help="Path of the output directory"
+#     )
+#     args = parser.parse_args()
+#     test(args)
