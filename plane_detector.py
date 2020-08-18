@@ -25,14 +25,14 @@ class PlaneDetector:
     def get_depth_map(self, path="", img=None):
         if path:
             img = cv2.imread(path)
-        img = cv2.resize(img, (640, 480))
+        if img.shape != (640, 480, 3):
+            img = cv2.resize(img, (640, 480))
         preds = self.depth_model.predict(img, is_channels_first=False, normalize=True)
         return preds
 
     def get_segmented_depth(self, img, interested_classes):
         seg_map, _ = self.get_segm_map("", img)
         depth_map = self.get_depth_map("", img)
-        depth_img = BtsController.depth_map_to_rgbimg(depth_map)
         vect_func = np.vectorize(lambda x: x in set(interested_classes))
         map_arr = vect_func(seg_map)
-        return depth_img * map_arr
+        return BtsController.depth_map_to_rgbimg(depth_map * map_arr)

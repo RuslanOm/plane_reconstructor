@@ -19,25 +19,28 @@ def load_segm_model(path):
 
 
 def decode_segmap(temp, ls):
-        r = temp.copy()
-        g = temp.copy()
-        b = temp.copy()
-        for item in ls:
-            r[temp == item] = label_colours[item][0]
-            g[temp == item] = label_colours[item][1]
-            b[temp == item] = label_colours[item][2]
+    r = temp.copy()
+    g = temp.copy()
+    b = temp.copy()
+    for item in ls:
+        r[temp == item] = label_colours[item][0]
+        g[temp == item] = label_colours[item][1]
+        b[temp == item] = label_colours[item][2]
 
-        rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
-        rgb[:, :, 0] = r / 255.0
-        rgb[:, :, 1] = g / 255.0
-        rgb[:, :, 2] = b / 255.0
-        return rgb
+    rgb = np.zeros((temp.shape[0], temp.shape[1], 3))
+    rgb[:, :, 0] = r / 255.0
+    rgb[:, :, 1] = g / 255.0
+    rgb[:, :, 2] = b / 255.0
+    return rgb
 
 
 def preprocess_image(device, img_path="", img=None, size=(640, 480)):
     if img_path:
         img = cv2.imread(img_path)
-    img_resized = cv2.resize(img, (size[0], size[1]))  # uint8 with RGB mode
+    if img.shape != (size[0], size[1], 3):
+        img_resized = cv2.resize(img, (size[0], size[1]))  # uint8 with RGB mode
+    else:
+        img_resized = img
     img = img_resized.astype(np.float16)
 
     # norm
@@ -54,4 +57,3 @@ def preprocess_image(device, img_path="", img=None, size=(640, 480)):
     img = torch.from_numpy(img).float()
 
     return img.to(device), img_resized
-
