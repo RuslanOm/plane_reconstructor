@@ -7,12 +7,10 @@ DEFAULT_CAM = o3d.camera.PinholeCameraIntrinsic(
     o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
 
 
-def plane_from_depth_img(map_arr, path="", img=None,
+def plane_from_depth_img(map_arr, image, depth_map,
                          threshold=0.2, n_iters=100, color=(255, 0, 0)):
     """Returns params of plane from cloud point"""
-    if path:
-        img = cv2.imread(path)
-    img_3d = o3d.geometry.Image(img)
+    img_3d = o3d.geometry.Image(depth_map)
     pcd = o3d.geometry.PointCloud.create_from_depth_image(img_3d, DEFAULT_CAM)
     plane_model, inliers = pcd.segment_plane(distance_threshold=threshold,
                                              ransac_n=3,
@@ -20,7 +18,7 @@ def plane_from_depth_img(map_arr, path="", img=None,
 
     indeces = np.argwhere(map_arr)[inliers,]
     for i, j in indeces:
-        img[i][j] = color
+        image[i][j] = color
 
-    return plane_model, img
+    return plane_model, image
 
