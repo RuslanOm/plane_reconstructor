@@ -13,7 +13,7 @@ def plane_from_depth_img(map_arr: np.ndarray,
                          depth_map: np.ndarray,
                          threshold=0.2,
                          n_iters=100,
-                         color=(255, 0, 0)) -> Tuple[np.ndarray[np.float64[4, 1]], np.ndarray]:
+                         color=(255, 0, 0)):
     """Returns params of plane from cloud point"""
     img_3d = o3d.geometry.Image(depth_map)
     pcd = o3d.geometry.PointCloud.create_from_depth_image(img_3d, DEFAULT_CAM)
@@ -74,8 +74,11 @@ def estimate_plane(depth_map: np.ndarray,
     pcd = o3d.geometry.PointCloud.create_from_depth_image(img_3d, DEFAULT_CAM)
     if is_down_sample:
         pcd = downsample_pcd(pcd, **downs_kwargs)
-    plane_model, inliers = pcd.segment_plane(distance_threshold=threshold,
-                                             ransac_n=3,
-                                             num_iterations=n_iters)
+    if len(np.asarray(pcd.points)) >= 3:
+        plane_model, inliers = pcd.segment_plane(distance_threshold=threshold,
+                                                 ransac_n=3,
+                                                 num_iterations=n_iters)
 
-    return plane_model
+        return plane_model
+    return 0, 0, 0, 0
+
