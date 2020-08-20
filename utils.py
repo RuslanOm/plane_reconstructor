@@ -1,6 +1,9 @@
 import cv2
 import numpy as np
 import torch
+from collections import Counter
+from typing import Set
+import concurrent.futures
 
 from segmnetator.utils import init_model, label_colours
 from depth_estimator import BTS
@@ -57,3 +60,43 @@ def preprocess_image(device, img_path="", img=None, size=(640, 480)):
     img = torch.from_numpy(img).float()
 
     return img.to(device), img_resized
+
+
+def take_topk_segments(seg_map: np.ndarray, classes: Set[int] = None, k=3, n_workers=8):
+    """
+        Method selects only top k segments from seg_map.
+        If classes is None, then selected from all classes,
+        else only from classes in set.
+    :param seg_map: segmentation map of image
+    :param classes: interested labels
+    :param k: number of top segments
+    :param n_workers: number of workers for multithreading
+    :return: list of maps for every label sorted by popularity
+    """
+    if classes is not None:
+        vect_func = np.vectorize(lambda x: x in classes)
+        map_arr = vect_func(seg_map)
+        tmp_arr = map_arr * seg_map
+    else:
+        tmp_arr = seg_map.copy()
+
+    labels = [i for i, _ in Counter(tmp_arr.flatten()).most_common(k)]
+
+    result = []
+    # def _inner_func(arr, label):
+    #     vect_func = np.vectorize(lambda x: x == label)
+    #     return label, vect_func(arr)
+
+    for label in labels:
+        vect_func = np.vectorize(lambda x: x == label)
+        result.append((label, vect_func(tmp_arr)))
+    #
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=n_workers) as executor:
+    #     arr = executor.map(_inner_func, [(seg_map, label) for label in labels])
+    return result
+
+
+
+
+
+
