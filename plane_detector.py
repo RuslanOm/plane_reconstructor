@@ -25,8 +25,8 @@ class PlaneDetector:
     def get_depth_map(self, path="", img=None):
         if path:
             img = cv2.imread(path)
-        if img.shape != (640, 480, 3):
-            img = cv2.resize(img, (640, 480))
+        if img.shape != (1216, 352, 3):
+            img = cv2.resize(img, (1216, 352))
         preds = self.depth_model.predict(img, is_channels_first=False, normalize=True)
         return preds
 
