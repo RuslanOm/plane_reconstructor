@@ -20,7 +20,7 @@ class PlaneDetector:
         outputs = self.segm_model(images)
         procc_time = time.time() - start
         pred = np.squeeze(outputs.data.max(1)[1].cpu().numpy(), axis=0)
-        return pred, procc_time
+        return cv2.resize(pred, (1216, 352)), procc_time
 
     def get_depth_map(self, path="", img=None):
         if path:
