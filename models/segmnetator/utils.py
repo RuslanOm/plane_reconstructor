@@ -12,7 +12,7 @@ import copy
 
 import torch
 import torchvision.models as models
-from segmnetator.hardnet import hardnet
+from models.segmnetator.hardnet import hardnet
 
 
 n_classes = 19
