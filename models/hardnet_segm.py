@@ -1,9 +1,8 @@
 import numpy as np
 import torch
-import time
-from utils import load_segm_model, decode_segmap
+from utils import load_segm_model, preprocess_image
 
-from base_segmentator import BaseSegmentator
+from models.base_classes.base_segmentator import BaseSegmentator
 
 
 class HardNetSegm(BaseSegmentator):
@@ -15,10 +14,9 @@ class HardNetSegm(BaseSegmentator):
         self.n_classes = num_classes
 
     def segment(self, images):
-        start = time.time()
+        images, resized_img = preprocess_image(self.device, "", images)
         outputs = self.model(images)
-        procc_time = time.time() - start
         pred = np.squeeze(outputs.data.max(1)[1].cpu().numpy(), axis=0)
-        decoded = decode_segmap(pred, range(self.n_classes))
-        return decoded, pred, procc_time
+        # decoded = decode_segmap(pred, range(self.n_classes))
+        return pred
 

@@ -5,8 +5,8 @@ from collections import Counter
 from typing import Set
 import concurrent.futures
 
-from segmnetator.utils import init_model, label_colours
-from depth_estimator import BTS
+from models.segmnetator.utils import init_model, label_colours
+from models.depth_estimator import BTS
 
 
 def load_depth_model(path):

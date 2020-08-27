@@ -1,4 +1,5 @@
 .idea
-segmnetator/data/
-depth_estimator/models/bts_latest
+models/segmnetator/data/
+models/depth_estimator/models/bts_latest
 .ipynb_checkpoints
+api.ipynb
