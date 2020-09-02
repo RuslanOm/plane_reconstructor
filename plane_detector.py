@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from models.depth_estimator.BTS import BtsController
 from models.base_classes.base_destimator import BaseDepthEstimator
 from models.base_classes.base_segmentator import BaseSegmentator
 
@@ -31,11 +30,14 @@ class PlaneDetector:
         """
         Estimates depth only in interested regions of image
         :param img: input image
-        :param interested_classes: classes for which depth will be estimated
-        :return: RGB images of depth
+        :param interested_classes: list of sets, classes for which depth will be estimated
+        :return: Tuple of depth map, segm map, map arrays for depth
         """
         seg_map = self.get_segm_map(img)
         depth_map = self.get_depth_map(img)
-        vect_func = np.vectorize(lambda x: x in set(interested_classes))
-        map_arr = vect_func(seg_map)
-        return BtsController.depth_map_to_rgbimg(depth_map * map_arr)
+        answer = []
+        for item in interested_classes:
+            vect_func = np.vectorize(lambda x: x in set(item))
+            map_arr = vect_func(seg_map)
+            answer.append(map_arr)
+        return depth_map, seg_map, answer

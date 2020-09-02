@@ -1,11 +1,69 @@
 import open3d as o3d
 import numpy as np
 import copy
-from typing import Tuple
+from typing import Callable
+import cv2
 
-
+DEFAULT_SHAPE = (640, 480)
 DEFAULT_CAM = o3d.camera.PinholeCameraIntrinsic(
     o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
+
+
+class Transform:
+    def __init__(self, first_block, transformations, last_block):
+        """
+        This class represents pipeline for processing depth maps
+        :param transformations: list of chained functions
+        """
+        self.first_block = first_block
+        self.transformations = transformations
+        self.last_block = last_block
+
+    def process_input(self, depth_map):
+        """
+        Main function to start pipeline
+        :param depth_map: input depth map for plane segmentation
+        :return: result plane equations and inliers
+        """
+        tmp = copy.deepcopy(depth_map)
+        inp = self.first_block(tmp)
+        for item, args, kwargs in self.transformations:
+            inp = item(inp, *args, **kwargs)
+        answer = self.last_block(inp)
+        return answer
+
+
+def crop_depth_map(depth_map, threshold=np.mean):
+    """
+    Function to crop pixel with big depth
+    :param depth_map: input depth map
+    :param threshold: function, float or int
+    :return: croped depth map
+    """
+    if isinstance(threshold, Callable):
+        arr = depth_map.flatten()
+        t = threshold(arr[arr > 0])
+    else:
+        t = threshold
+    return np.where(depth_map < t, depth_map, 0)
+
+
+def get_connected_components(depth_map, threshold=0.3):
+    """
+    Function to split depth map into separated components
+    :param depth_map: input depth map
+    :param threshold: float, components, which less then this value, will be skipped
+    :return: list of depth maps
+    """
+    arr = np.uint8(np.where(depth_map > 0, 1, 0))
+    count_pixels = arr.sum()
+    num, result = cv2.connectedComponents(arr)
+    ans = []
+    for i in range(1, num):
+        tmp = np.where(result == i, 1, 0)
+        if tmp.sum() / count_pixels >= threshold:
+            ans.append(np.float32(depth_map * tmp))
+    return ans
 
 
 def plane_from_depth_img(map_arr: np.ndarray,
@@ -26,15 +84,6 @@ def plane_from_depth_img(map_arr: np.ndarray,
         image[i][j] = color
 
     return plane_model, image
-
-
-def crop_depth_map(depth_map: np.ndarray, threshold=0.3) -> np.ndarray:
-    """Crops depth map from above"""
-    x, y = depth_map.shape
-    result = np.asarray(copy.copy(depth_map))
-    for i in range(int(x * threshold) + 1):
-        result[i, ] *= 0
-    return result
 
 
 def downsample_pcd(pcd: o3d.geometry.PointCloud, voxel=0.05) -> o3d.geometry.PointCloud:
@@ -81,4 +130,3 @@ def estimate_plane(depth_map: np.ndarray,
 
         return plane_model
     return 0, 0, 0, 0
-
