@@ -3,6 +3,7 @@ import numpy as np
 import copy
 from typing import Callable
 import cv2
+import random
 
 DEFAULT_SHAPE = (640, 480)
 DEFAULT_CAM = o3d.camera.PinholeCameraIntrinsic(
@@ -38,14 +39,15 @@ def crop_depth_map(depth_map, threshold=np.mean):
     Function to crop pixel with big depth
     :param depth_map: input depth map
     :param threshold: function, float or int
-    :return: croped depth map
+    :return: croped depth map, new map arr
     """
     if isinstance(threshold, Callable):
         arr = depth_map.flatten()
         t = threshold(arr[arr > 0])
     else:
         t = threshold
-    return np.where(depth_map < t, depth_map, 0)
+    ans = np.where(depth_map < t, depth_map, 0)
+    return ans, len(np.argwhere(ans))
 
 
 def get_connected_components(depth_map, threshold=0.3):
@@ -61,9 +63,64 @@ def get_connected_components(depth_map, threshold=0.3):
     ans = []
     for i in range(1, num):
         tmp = np.where(result == i, 1, 0)
+        print(tmp.sum())
         if tmp.sum() / count_pixels >= threshold:
             ans.append(np.float32(depth_map * tmp))
     return ans
+
+
+def _update_map_arr(map_arr, ind):
+    for i, j in ind:
+        map_arr[i][j] = 0
+
+
+def _get_plane(pcd, th):
+    return pcd.segment_plane(distance_threshold=th,
+                             ransac_n=3,
+                             num_iterations=100)
+
+
+def _get_pcd(depth_map):
+    img_3d = o3d.geometry.Image(depth_map)
+    return o3d.geometry.PointCloud.create_from_depth_image(img_3d, DEFAULT_CAM)
+
+
+def estimate_planes(depth_map, map_arr, thr=0.3):
+    curr_map_arr = copy.deepcopy(map_arr)
+    pcd = _get_pcd(depth_map)
+
+    ls = np.argwhere(map_arr)
+    np_ls = np.array(ls)
+
+    arr = np.asarray(pcd.points)
+    size = len(pcd.points)
+    th = abs(np.max(arr) - np.min(arr)) / 100
+    plane_model, inliers = _get_plane(pcd, th)
+    result = []
+    while len(inliers) >= int(size * thr):
+        result.append((plane_model, inliers))
+        _update_map_arr(curr_map_arr, np_ls[inliers])
+        pcd = _get_pcd(depth_map * curr_map_arr)
+        plane_model, inliers = _get_plane(pcd, th)
+    return result
+
+
+def get_plane_img(img, ls_map_arrs, ls_inliers):
+    """
+    Function to plot detected planes on picture
+    :param img:
+    :param ls_map_arrs:
+    :param ls_inliers:
+    :return:
+    """
+    res = copy.deepcopy(img)
+    for map_arr, inlier in zip(ls_map_arrs, ls_inliers):
+        ls = np.argwhere(map_arr)
+        np_ls = np.array(ls)
+        color = [random.randint(0, 255) for _ in range(3)]
+        for i, j in np_ls[inlier]:
+            res[i][j] = color
+    return res
 
 
 def plane_from_depth_img(map_arr: np.ndarray,
