@@ -39,14 +39,16 @@ def crop_depth_map(depth_map, threshold=np.mean):
     Function to crop pixel with big depth
     :param depth_map: input depth map
     :param threshold: function, float or int
-    :return: croped depth map, new map arr
+    :return: croped depth map, number of nonzero pixels
     """
+    vect_func = np.vectorize(lambda x: 1 / x if x > 0 else x)
+    tmp = vect_func(depth_map)
     if isinstance(threshold, Callable):
-        arr = depth_map.flatten()
+        arr = tmp.flatten()
         t = threshold(arr[arr > 0])
     else:
         t = threshold
-    ans = np.where(depth_map < t, depth_map, 0)
+    ans = np.where(tmp < t, tmp, 0)
     return ans, len(np.argwhere(ans))
 
 
@@ -63,7 +65,6 @@ def get_connected_components(depth_map, threshold=0.3):
     ans = []
     for i in range(1, num):
         tmp = np.where(result == i, 1, 0)
-        print(tmp.sum())
         if tmp.sum() / count_pixels >= threshold:
             ans.append(np.float32(depth_map * tmp))
     return ans
@@ -85,40 +86,65 @@ def _get_pcd(depth_map):
     return o3d.geometry.PointCloud.create_from_depth_image(img_3d, DEFAULT_CAM)
 
 
-def estimate_planes(depth_map, map_arr, thr=0.3):
-    curr_map_arr = copy.deepcopy(map_arr)
-    pcd = _get_pcd(depth_map)
-
-    ls = np.argwhere(map_arr)
-    np_ls = np.array(ls)
-
+def _get_plane_from_pcd(depth_map):
+    img_3d = o3d.geometry.Image(np.float32(depth_map))
+    pcd = o3d.geometry.PointCloud.create_from_depth_image(img_3d, DEFAULT_CAM)
+    pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
     arr = np.asarray(pcd.points)
-    size = len(pcd.points)
     th = abs(np.max(arr) - np.min(arr)) / 100
-    plane_model, inliers = _get_plane(pcd, th)
+    plane_model, inliers = pcd.segment_plane(distance_threshold=th,
+                                             ransac_n=3,
+                                             num_iterations=100)
+    return plane_model, inliers
+
+
+# recursion
+# def extract_planes_rec(map_arr, depth_map, start_size, t, result):
+#     curr_map_arr = copy.deepcopy(map_arr)
+#     plane_model, inliers = _get_plane_from_pcd(depth_map * curr_map_arr)
+#     if len(inliers) < int(start_size * t):
+#         return []
+#     else:
+#         ls = np.argwhere(map_arr)
+#         np_ls = np.array(ls)
+#         ans = np.zeros((480, 640))
+#         for i, j in np_ls[inliers]:
+#             curr_map_arr[i][j] = 0
+#             ans[i][j] = 1
+#         result.append((ans, plane_model))
+#         extract_planes_rec(curr_map_arr, depth_map, start_size, t, result)
+
+
+# consequentive
+def extract_planes_con(map_arr, depth_map, start_size, t):
+    curr_map_arr = copy.deepcopy(map_arr)
+    plane_model, inliers = _get_plane_from_pcd(depth_map * curr_map_arr)
+
     result = []
-    while len(inliers) >= int(size * thr):
-        result.append((plane_model, inliers))
-        _update_map_arr(curr_map_arr, np_ls[inliers])
-        pcd = _get_pcd(depth_map * curr_map_arr)
-        plane_model, inliers = _get_plane(pcd, th)
+    while len(inliers) >= int(start_size * t):
+        ls = np.argwhere(curr_map_arr)
+        np_ls = np.array(ls)
+        ans = np.zeros((480, 640))
+        for i, j in np_ls[inliers]:
+            curr_map_arr[i][j] = 0
+            ans[i][j] = 1
+        result.append((ans, plane_model))
+        plane_model, inliers = _get_plane_from_pcd(depth_map * curr_map_arr)
     return result
 
 
-def get_plane_img(img, ls_map_arrs, ls_inliers):
+def get_plane_img(img, ls_map_arrs):
     """
     Function to plot detected planes on picture
     :param img:
     :param ls_map_arrs:
-    :param ls_inliers:
     :return:
     """
     res = copy.deepcopy(img)
-    for map_arr, inlier in zip(ls_map_arrs, ls_inliers):
-        ls = np.argwhere(map_arr)
-        np_ls = np.array(ls)
-        color = [random.randint(0, 255) for _ in range(3)]
-        for i, j in np_ls[inlier]:
+    for map_arr in ls_map_arrs:
+        indeces = np.argwhere(map_arr)
+        color = [random.randint(1, 255) for _ in range(3)]
+        for i, j in indeces:
             res[i][j] = color
     return res
 
