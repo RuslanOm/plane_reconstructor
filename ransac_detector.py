@@ -4,6 +4,7 @@ import copy
 from typing import Callable
 import cv2
 import random
+from functools import reduce
 
 DEFAULT_SHAPE = (640, 480)
 DEFAULT_CAM = o3d.camera.PinholeCameraIntrinsic(
@@ -60,17 +61,17 @@ def _get_plane_from_pcd(depth_map):
 
 def extract_planes_con(map_arr, depth_map, start_size, t):
     curr_map_arr = copy.deepcopy(map_arr)
-    plane_model, inliers = _get_plane_from_pcd(depth_map * curr_map_arr)
-
+    count = start_size
     result = []
-    while len(inliers) >= int(start_size * t):
+    while count >= int(start_size * t):
+        plane_model, inliers = _get_plane_from_pcd(depth_map * curr_map_arr)
         ls = np.where(curr_map_arr)
         ans = np.zeros(curr_map_arr.shape)
         x, y = ls[0][inliers], ls[1][inliers]
         curr_map_arr[x, y] = 0
         ans[x, y] = 1
         result.append((ans, plane_model))
-        plane_model, inliers = _get_plane_from_pcd(depth_map * curr_map_arr)
+        count -= len(inliers)
     return result
 
 
@@ -88,3 +89,17 @@ def get_plane_img(img, ls_map_arrs):
 
         res[ind[0], ind[1], :] = color
     return res
+
+
+def close_map(map_arr, kernels=None):
+    """
+    Function used for filling holes in map_arr
+    :param map_arr: initial map_arr
+    :param kernels: tuple of kernels used to fill holes in map
+    :return: relusting map_arr after closing
+    """
+    if kernels is None:
+        kernels = [np.ones((100, 10), np.uint8), np.ones((10, 100), np.uint8)]
+
+    ls_closings = [cv2.morphologyEx(np.uint8(map_arr), cv2.MORPH_CLOSE, kernel) for kernel in kernels]
+    return reduce(np.logical_and, ls_closings, np.ones(map_arr.shape))
