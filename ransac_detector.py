@@ -47,7 +47,7 @@ def get_connected_components(depth_map: np.array, threshold=0.3) -> List[np.arra
     return ans
 
 
-def _get_plane_from_pcd(depth_map: np.array) -> Tuple[np.ndarray[np.float64[4, 1]], List[int]]:
+def _get_plane_from_pcd(depth_map: np.array):
     """
     Returns plane and indeces of inliers from depth_map
     :param depth_map: initial depth_map
