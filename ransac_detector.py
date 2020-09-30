@@ -1,7 +1,7 @@
 import open3d as o3d
 import numpy as np
 import copy
-from typing import Callable
+from typing import Callable, List, Tuple
 import cv2
 import random
 from functools import reduce
@@ -11,7 +11,7 @@ DEFAULT_CAM = o3d.camera.PinholeCameraIntrinsic(
     o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
 
 
-def crop_depth_map(depth_map, threshold=np.mean):
+def crop_depth_map(depth_map: np.array, threshold=np.mean) -> Tuple[np.array, int]:
     """
     Function to crop pixel with big depth
     :param depth_map: input depth map
@@ -29,7 +29,7 @@ def crop_depth_map(depth_map, threshold=np.mean):
     return ans, len(np.argwhere(ans))
 
 
-def get_connected_components(depth_map, threshold=0.3):
+def get_connected_components(depth_map: np.array, threshold=0.3) -> List[np.array]:
     """
     Function to split depth map into separated components
     :param depth_map: input depth map
@@ -47,7 +47,12 @@ def get_connected_components(depth_map, threshold=0.3):
     return ans
 
 
-def _get_plane_from_pcd(depth_map):
+def _get_plane_from_pcd(depth_map: np.array) -> Tuple[np.ndarray[np.float64[4, 1]], List[int]]:
+    """
+    Returns plane and indeces of inliers from depth_map
+    :param depth_map: initial depth_map
+    :return: plane params and list of indeces
+    """
     img_3d = o3d.geometry.Image(np.float32(depth_map))
     pcd = o3d.geometry.PointCloud.create_from_depth_image(img_3d, DEFAULT_CAM)
     pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
@@ -59,7 +64,15 @@ def _get_plane_from_pcd(depth_map):
     return plane_model, inliers
 
 
-def extract_planes_con(map_arr, depth_map, start_size, t):
+def extract_planes_con(map_arr: np.array, depth_map: np.array, start_size: int, t: float) -> List[np.array]:
+    """
+    Extracts planes from depth_map
+    :param map_arr: mask for segment of image
+    :param depth_map: depth for this segment
+    :param start_size: initial count of ponts in point cloud
+    :param t: threshold for time until method extracts planes
+    :return: list of map_arrs and plane params from pcd
+    """
     curr_map_arr = copy.deepcopy(map_arr)
     count = start_size
     result = []
@@ -75,7 +88,7 @@ def extract_planes_con(map_arr, depth_map, start_size, t):
     return result
 
 
-def get_plane_img(img, ls_map_arrs):
+def get_plane_img(img: np.array, ls_map_arrs: List[np.array]) -> np.array:
     """
     Function to plot detected planes on picture
     :param img:
@@ -86,20 +99,39 @@ def get_plane_img(img, ls_map_arrs):
     for map_arr in ls_map_arrs:
         color = [random.randint(1, 255) for _ in range(3)]
         ind = np.where(map_arr)
-
         res[ind[0], ind[1], :] = color
     return res
 
 
-def close_map(map_arr, kernels=None):
+def close_map(map_arr: np.array, kernels=None) -> np.array:
     """
     Function used for filling holes in map_arr
     :param map_arr: initial map_arr
     :param kernels: tuple of kernels used to fill holes in map
-    :return: relusting map_arr after closing
+    :return: resulting map_arr after closing
     """
     if kernels is None:
         kernels = [np.ones((100, 10), np.uint8), np.ones((10, 100), np.uint8)]
 
     ls_closings = [cv2.morphologyEx(np.uint8(map_arr), cv2.MORPH_CLOSE, kernel) for kernel in kernels]
     return reduce(np.logical_and, ls_closings, np.ones(map_arr.shape))
+
+
+def loss_metric(true_pcd: o3d.geometry.PointCloud, approx_pcd: o3d.geometry.PointCloud, func="rmse") -> float:
+    """
+    :param true_pcd:
+    :param approx_pcd:
+    :param func:
+    :return:
+    """
+    funcs = {
+        "rmse": (lambda x, y: ((x - y) * 1000) ** 2, lambda x, n: np.sqrt(x / n)),
+        "mae": (lambda x, y: abs((x - y) * 1000), lambda x, n: x / n),
+        "mse": (lambda x, y: ((x - y) * 1000) ** 2, lambda x, n: x / n)
+    }
+    true_arr = np.asarray(true_pcd.points)
+    approx_arr = np.asarray(approx_pcd.points)
+    loss = 0
+    for x, y in zip(true_arr, approx_arr):
+        loss += funcs[func][0](x[-1], y[-1])
+    return funcs[func][1](loss, len(true_arr))
