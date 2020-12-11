@@ -3,6 +3,7 @@ from flask.json import jsonify
 import matplotlib.pyplot as plt
 from PIL import Image
 import base64
+import time
 import io
 
 import cv2
@@ -32,7 +33,9 @@ def hello_world():
     file = request.files['media']
     jpg_as_np = np.frombuffer(file.read(), dtype=np.uint8)
     img = cv2.imdecode(jpg_as_np, flags=1)
+    start = time.time()
     res = get_full_cycle(model, img)
+    print(f"Time elapsed: {time.time() - start}")
     answer = Image.fromarray(res[0]).tobytes()
     return {"img": base64.encodebytes(answer).decode('utf-8')}
 
