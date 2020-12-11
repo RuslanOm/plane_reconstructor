@@ -1,0 +1,7 @@
+version: '3'
+services:
+  modelserver:
+    image: model_plane
+    build: .
+    ports:
+      - "5000:5000"
