@@ -17,7 +17,7 @@ from ransac_detector import *
 from process_utils import *
 
 print("Initiating model ...")
-hardnet_path = "/home/ruslan/Документы/startup/tmp/plane_reconstructor/models_pretrained/hardnet_alter_checkpoint.pkl"
+hardnet_path = "models_pretrained/hardnet_alter_checkpoint.pkl"
 
 depth_model = MIDASEstimator()
 segm_model = HardNetSegm(hardnet_path)

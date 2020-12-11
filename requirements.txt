@@ -4,3 +4,5 @@ albumentations
 opencv-python
 open3d
 flask
+torchvision
+tensorboard
