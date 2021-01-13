@@ -113,7 +113,7 @@ def _get_full_cycle(img):
 
 
 if __name__ == "__main__":
-    path = "/home/ruslan/Документы/startup/FCHarDNet/data/leftImg8bit/val/frankfurt/"
+    path = ""
     files = os.listdir(path)
 
     images = [cv2.resize(cv2.imread(path + item), (640, 480)) for item in tqdm(files[:50])]
