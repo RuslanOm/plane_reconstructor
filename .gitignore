@@ -3,3 +3,9 @@ models/segmnetator/data/
 models/depth_estimator/models/bts_latest
 .ipynb_checkpoints
 api.ipynb
+
+__pycache__
+models/vit/weights/dpt_hybrid-midas-501f0c75.pt
+models/vit/weights/dpt_large-midas-2f21e586.pt
+.DS_Store
+venv/
