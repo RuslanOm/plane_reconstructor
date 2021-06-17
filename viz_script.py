@@ -9,12 +9,12 @@ DEFAULT_CAM = o3d.camera.PinholeCameraIntrinsic(
     o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
 
 # print(DEFAULT_CAM.intrinsic_matrix)
-# intrinsic = o3d.io.read_pinhole_camera_intrinsic("intrinsics.json")
+# intrinsic = o3d.io.read_pinhole_camera_intrinsic("intrinsics_google.json")
 intrinsic = DEFAULT_CAM
 c_imgs = glob.glob("./input/*")
 c_imgs.sort()
 
-d_imgs = glob.glob("./output/*.pfm")
+d_imgs = glob.glob("tmp_data/output/*.pfm")
 d_imgs.sort()
 
 

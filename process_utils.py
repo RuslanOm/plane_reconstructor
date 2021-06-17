@@ -8,7 +8,7 @@ from models.midas_estimator import MIDASEstimator
 from ransac_detector import *
 
 from sklearn.cluster import AgglomerativeClustering
-from sklearn.neighbors.nearest_centroid import NearestCentroid
+from sklearn.neighbors import NearestCentroid
 from collections import defaultdict
 from ransac_detector import *
 import scipy.spatial.distance as ds

@@ -9,7 +9,7 @@ import cv2
 model = VITEstimator(model_path='models/vit/weights/dpt_large-midas-2f21e586.pt')
 # model = MIDASEstimator()
 input_path = 'input/'
-output_path = 'output/'
+output_path = 'tmp_data/output/'
 img_names = glob.glob(os.path.join(input_path, "*"))
 num_images = len(img_names)
 
